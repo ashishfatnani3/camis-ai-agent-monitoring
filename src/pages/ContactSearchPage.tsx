@@ -5,7 +5,7 @@ import { Pagination } from "../components/Pagination";
 import { StatusBanner } from "../components/StatusBanner";
 import { useContactSearch } from "../hooks/useContactSearch";
 import { daysAgoDateInputValue, endOfDayIso, startOfDayIso, todayDateInputValue } from "../utils/date";
-import type { Contact, ContactSearchFilters, ContactSearchParams } from "../types/contact";
+import { isPaginatedResponse, type Contact, type ContactSearchFilters, type ContactSearchParams } from "../types/contact";
 
 const DEFAULT_OUTCOMES = ["DEFLECTED", "RESOLVED", "ESCALATED", "TRANSFERRED", "ABANDONED"];
 
@@ -24,7 +24,8 @@ function matchesClientFilters(contact: Contact, filters: ContactSearchFilters): 
   const contactIdMatch =
     !filters.contactId || contact.contactId.toLowerCase().includes(filters.contactId.toLowerCase());
   const phoneMatch =
-    !filters.phoneNumber || contact.phoneNumber.toLowerCase().includes(filters.phoneNumber.toLowerCase());
+    !filters.phoneNumber ||
+    (contact.phoneNumber ?? "").toLowerCase().includes(filters.phoneNumber.toLowerCase());
   const outcomeMatch = !filters.outcome || contact.outcome === filters.outcome;
   return contactIdMatch && phoneMatch && outcomeMatch;
 }
@@ -113,11 +114,18 @@ export function ContactSearchPage() {
       {error && <StatusBanner kind="error" message={error} onRetry={refetch} />}
       {loading && !error && <StatusBanner kind="loading" message="Loading contacts…" />}
 
+      {!error && data && !isPaginatedResponse(data) && (
+        <p className="lookup-note">
+          Exact match for Contact ID <code>{data.contactId}</code> — date range and other filters
+          were ignored.
+        </p>
+      )}
+
       {!error && (
         <>
           <ContactTable contacts={visibleContacts} expandedIds={expandedIds} onToggle={handleToggleContact} />
 
-          {data && (
+          {data && isPaginatedResponse(data) && (
             <Pagination
               page={data.page}
               totalPages={data.totalPages}

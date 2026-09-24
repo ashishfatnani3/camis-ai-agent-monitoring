@@ -40,7 +40,18 @@ function is the only thing to change.
 
 ## API contract
 
-`GET /contact-search` is expected to return:
+`GET /contact-search` has three modes, selected server-side by which query
+params are present (see `backend/contact-search/index.mjs` for the exact
+logic):
+
+1. **Day/date range** (default — used when neither `contactId` nor
+   `phoneNumber` is given): paginated.
+2. **Phone number** (`phoneNumber`): paginated, optionally scoped to a date
+   range.
+3. **Exact contact ID** (`contactId`): a single-item lookup by primary key.
+   Ignores date range, phone number, and pagination entirely.
+
+Paginated responses look like:
 
 ```jsonc
 {
@@ -68,38 +79,30 @@ function is the only thing to change.
 }
 ```
 
+An exact `contactId` lookup instead returns `{ contactId, callCount, calls }`
+with no pagination fields. The frontend models both shapes as a
+`ContactSearchResponse` union (`src/types/contact.ts`,
+`isPaginatedResponse`) and renders accordingly — `ContactSearchPage` shows
+pagination controls only for the paginated shape, and an "Exact match" note
+for the lookup shape.
+
 The UI sends `start`, `end`, `page`, `pageSize`, `contactId`, `phoneNumber`
-and `outcome` as query params on every request. If the Lambda doesn't yet
-filter on `contactId` / `phoneNumber` / `outcome`, the UI still filters the
-returned page client-side, so search works correctly either way — once the
-backend adds server-side filtering, results (and pagination counts) will
-simply become accurate across the whole date range instead of just the
-current page.
+and `outcome` as query params on every request. `outcome` isn't filtered
+server-side, so the UI also filters the current page client-side on it (and
+redundantly on `contactId`/`phoneNumber`, which is a no-op once the backend
+has already filtered).
 
-## Known backend issue (as of this build)
+## Backend
 
-`GET /contact-search` on the `dev` stage currently returns `502 Internal
-server error` for every request made through API Gateway (with or without
-query params, and for `OPTIONS` preflight too), even though the same Lambda
-succeeds when invoked directly as a test event in the Lambda console. This
-points to the API Gateway → Lambda proxy integration itself, not this
-frontend — check:
-
-- CloudWatch Logs for the Lambda's `dev` alias/version invoked via API
-  Gateway (its output/error there will show the real exception)
-- Whether the proxy integration is passing an API Gateway `event` shape the
-  handler doesn't expect (a Lambda test event and an API Gateway proxy
-  event have different shapes)
-- Whether CORS is configured on the API (needed for browser `fetch` calls
-  regardless of the 502)
-
-The UI already handles this gracefully (see the error banner with **Retry**
-on the Contact Search page) — once the endpoint returns 200s, no frontend
-changes should be needed.
+`backend/contact-search/` holds the Lambda source behind this endpoint. It's
+deployed manually through the AWS Console (no CI/IaC yet) — see that
+directory's README for deploy steps and CORS troubleshooting.
 
 ## Project structure
 
 ```
+backend/
+  contact-search/   Lambda source for GET /contact-search (console-deployed)
 src/
   api/            fetch wrapper + typed contact-search call
   components/     SearchFilters, ContactTable/Row, ConversationTranscript, Pagination, ...

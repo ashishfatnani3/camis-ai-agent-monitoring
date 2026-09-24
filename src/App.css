@@ -50,6 +50,11 @@
   font-weight: 600;
 }
 
+.field__hint {
+  color: #8d99a6;
+  font-size: 11px;
+}
+
 .field input,
 .field select {
   padding: 7px 10px;
@@ -338,6 +343,21 @@
 .transcript__sources a {
   color: #0972d3;
   word-break: break-all;
+}
+
+.lookup-note {
+  background: #f0f7ff;
+  border: 1px solid #a9c7ea;
+  color: #0b3b66;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.lookup-note code {
+  font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+  font-size: 12px;
 }
 
 /* Pagination */

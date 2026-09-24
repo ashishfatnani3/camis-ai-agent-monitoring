@@ -54,10 +54,11 @@ export function SearchFilters({ filters, outcomeOptions, onApply, onReset }: Sea
           <span className="field__label">Contact ID</span>
           <input
             type="text"
-            placeholder="Search by contact ID"
+            placeholder="Exact contact ID"
             value={draft.contactId}
             onChange={(e) => setDraft({ ...draft, contactId: e.target.value })}
           />
+          <span className="field__hint">Exact match — ignores date range and other filters</span>
         </label>
 
         <label className="field field--grow">

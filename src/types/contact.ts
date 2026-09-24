@@ -11,20 +11,37 @@ export interface ConversationTurn {
 
 export interface Contact {
   contactId: string;
-  phoneNumber: string;
+  phoneNumber: string | null;
   startedAt: string;
   outcome: string;
   conversation: ConversationTurn[];
 }
 
-export interface ContactSearchResponse {
-  start: string;
-  end: string;
+/** Day-range or phone-number search: a page of results. */
+export interface PaginatedContactSearchResponse {
+  start?: string;
+  end?: string;
+  phoneNumber?: string;
   page: number;
   pageSize: number;
   totalEntries: number;
   totalPages: number;
   calls: Contact[];
+}
+
+/** Exact contactId lookup: at most one result, no pagination. */
+export interface ContactLookupResponse {
+  contactId: string;
+  callCount: number;
+  calls: Contact[];
+}
+
+export type ContactSearchResponse = PaginatedContactSearchResponse | ContactLookupResponse;
+
+export function isPaginatedResponse(
+  response: ContactSearchResponse,
+): response is PaginatedContactSearchResponse {
+  return "totalPages" in response;
 }
 
 export interface ContactSearchParams {
